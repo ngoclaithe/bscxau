@@ -337,6 +337,12 @@ export const useAdminStore = create<AdminState>()(
         isAuthenticated: state.isAuthenticated,
         userRole: state.userRole,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state && state.isAuthenticated) {
+          // Verify session when rehydrating
+          verifyAdminSession();
+        }
+      }
     }
   )
 );
