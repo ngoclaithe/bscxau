@@ -40,6 +40,7 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
         try {
             const token = this._extractToken(client);
             if (!token) {
+                console.warn('[Support WS] No token found, disconnecting');
                 client.disconnect();
                 return;
             }
@@ -56,7 +57,7 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
             }
 
             console.log(
-                `[Support WS] Connected: ${client.id} | userId=${client.userId} | isAdmin=${client.isAdmin}`,
+                `[Support WS] Connected: ${client.id} | userId=${client.userId} | role=${client.userRole} | isAdmin=${client.isAdmin} | payload.sub=${payload.sub}`,
             );
         } catch (err) {
             console.warn('[Support WS] Auth failed, disconnecting:', err?.message);
@@ -132,6 +133,10 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
         }
 
         const senderType: 'user' | 'admin' = client.isAdmin ? 'admin' : 'user';
+        console.log(
+            `[Support WS] send_message: userId=${client.userId} | isAdmin=${client.isAdmin} | senderType=${senderType} | role=${client.userRole} | msg="${data.message?.slice(0, 30) || '[image]'}"`,
+        );
+
         const msg = await this.supportService.saveMessage(
             data.session_id,
             client.userId!,
