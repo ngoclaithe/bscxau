@@ -15,6 +15,9 @@ async function bootstrap() {
     .split(',')
     .map(url => url.trim().replace(/^["']|["']$/g, '').replace(/\/$/, ''));
 
+  console.log('[Bootstrap] FRONTEND_URL from env:', process.env.FRONTEND_URL);
+  console.log('[Bootstrap] Parsed CORS origins:', frontendUrls);
+
   app.enableCors({
     origin: frontendUrls,
     credentials: true,
