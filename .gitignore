@@ -1,0 +1,60 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+
+# Build outputs
+/dist/
+/build/
+/out/
+.next/
+/be/dist/
+/fe/dist/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+!.env.example
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Database
+*.sqlite
+*.sqlite-journal
+*.db
+/be/prisma/*.db
+/be/prisma/*.sqlite
+
+# Prisma
+/be/node_modules/@prisma/client
+
+# Temporary files
+tmp/
+.gemini/
+.temp/
+
+# Business Specific
+/be/uploads/

@@ -1,0 +1,367 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+  TRADE_AUDITOR
+  FINANCE_AUDITOR
+}
+
+enum OrderDirection {
+  UP
+  DOWN
+}
+
+enum OrderStatus {
+  PENDING
+  LOCKED
+  SETTLED
+}
+
+enum TradeResult {
+  WIN
+  LOSE
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAW
+  LOCK
+  UNLOCK
+  SETTLE
+}
+
+model User {
+  id            String   @id @default(uuid())
+  walletAddress String?  @unique @map("wallet_address")
+  email         String?  @unique
+  passwordHash  String?  @map("password_hash")
+  nickname      String?
+  bio           String?
+  avatarUrl     String?  @map("avatar_url")
+  isPublic      Boolean  @default(true) @map("is_public")
+  role          UserRole @default(USER)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  resetToken        String?   @unique @map("reset_token")
+  resetTokenExpires DateTime? @map("reset_token_expires")
+
+  wallet      Wallet?
+  stats       UserStats?
+  trades      TradeOrder[]
+  deposits    DepositOrder[]
+  withdrawals WithdrawOrder[]
+  isActive    Boolean  @default(true) @map("is_active")
+  status      String   @default("active")
+
+  supportSessions SupportSession[]
+  sessions        UserSession[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  ipAddress    String?  @map("ip_address")
+  device       String?
+  accessToken  String   @unique @map("access_token")
+  refreshToken String?  @unique @map("refresh_token")
+  expiresAt    DateTime @map("expires_at")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  lastActiveAt DateTime @default(now()) @map("last_active_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model UserStats {
+  id          String  @id @default(uuid())
+  userId      String  @unique @map("user_id")
+  totalTrades Int     @default(0) @map("total_trades")
+  winTrades   Int     @default(0) @map("win_trades")
+  loseTrades  Int     @default(0) @map("lose_trades")
+  totalPnl    Decimal @default(0) @db.Decimal(20, 2) @map("total_pnl")
+  winRate     Decimal @default(0) @db.Decimal(5, 2) @map("win_rate")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_stats")
+}
+
+model Wallet {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  balance       Decimal  @default(0) @db.Decimal(20, 2)
+  lockedBalance Decimal  @default(0) @db.Decimal(20, 2) @map("locked_balance")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user         User               @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id        String          @id @default(uuid())
+  walletId  String          @map("wallet_id")
+  type      TransactionType
+  amount    Decimal         @db.Decimal(20, 2)
+  txHash    String?         @map("tx_hash")
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id])
+
+  @@map("wallet_transactions")
+}
+
+model TradingPair {
+  id         String  @id @default(uuid())
+  symbol     String  @unique
+  payoutRate Decimal @db.Decimal(5, 2) @map("payout_rate")
+  isActive   Boolean @default(true) @map("is_active")
+
+  trades TradeOrder[]
+
+  @@map("trading_pairs")
+}
+
+model TradeOrder {
+  id         String         @id @default(uuid())
+  userId     String         @map("user_id")
+  pairId     String         @map("pair_id")
+  direction  OrderDirection
+  amount     Decimal        @db.Decimal(20, 2)
+  payoutRate Decimal        @db.Decimal(5, 2) @map("payout_rate")
+  entryPrice Decimal?       @db.Decimal(20, 8) @map("entry_price")
+  openTime   DateTime       @default(now()) @map("open_time")
+  expireTime DateTime       @map("expire_time")
+  status     OrderStatus    @default(PENDING)
+
+  user   User             @relation(fields: [userId], references: [id])
+  pair   TradingPair      @relation(fields: [pairId], references: [id])
+  result TradeOrderResult?
+
+  @@map("trade_orders")
+}
+
+model TradeOrderResult {
+  id          String      @id @default(uuid())
+  tradeId     String      @unique @map("trade_id")
+  settlePrice Decimal     @db.Decimal(20, 8) @map("settle_price")
+  result      TradeResult
+  profit      Decimal     @db.Decimal(20, 2)
+  settledAt   DateTime    @default(now()) @map("settled_at")
+
+  trade TradeOrder @relation(fields: [tradeId], references: [id])
+
+  @@map("trade_order_results")
+}
+
+model PriceFeedLog {
+  id        String   @id @default(uuid())
+  pair      String
+  price     Decimal  @db.Decimal(20, 8)
+  source    String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("price_feed_logs")
+}
+
+model AdminUser {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  role         String   @default("admin")
+  passwordHash String   @map("password_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  logs AdminLog[]
+
+  @@map("admin_users")
+}
+
+model AdminLog {
+  id        String   @id @default(uuid())
+  adminId   String   @map("admin_id")
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  admin AdminUser @relation(fields: [adminId], references: [id])
+
+  @@map("admin_logs")
+}
+
+model PriceCandle {
+  id        String   @id @default(uuid())
+  symbol    String
+  time      DateTime
+  open      Decimal  @db.Decimal(20, 8)
+  high      Decimal  @db.Decimal(20, 8)
+  low       Decimal  @db.Decimal(20, 8)
+  close     Decimal  @db.Decimal(20, 8)
+  volume    Decimal  @default(0) @db.Decimal(20, 8)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([symbol, time])
+  @@index([symbol, time])
+  @@map("price_candles")
+}
+
+model PriceTick {
+  id        String   @id @default(uuid())
+  symbol    String
+  price     Decimal  @db.Decimal(20, 8)
+  timestamp DateTime @default(now())
+
+  @@index([symbol, timestamp])
+  @@map("price_ticks")
+}
+
+model BankAccount {
+  id            String   @id @default(uuid())
+  accountName   String   @map("account_name")
+  bankName      String   @map("bank_name")
+  bankCode      String   @map("bank_code")
+  accountNumber String   @map("account_number")
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  deposits DepositOrder[]
+
+  @@map("bank_accounts")
+}
+
+enum DepositStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+  EXPIRED
+}
+
+enum WithdrawStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+}
+
+model DepositOrder {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  bankAccountId String        @map("bank_account_id")
+  amount        Decimal       @db.Decimal(20, 2)
+  codePay       String        @unique @map("code_pay")
+  status        DepositStatus @default(PENDING)
+  note          String?
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  expiredAt     DateTime      @map("expired_at")
+
+  user        User        @relation(fields: [userId], references: [id])
+  bankAccount BankAccount @relation(fields: [bankAccountId], references: [id])
+
+  @@index([userId, status])
+  @@index([codePay])
+  @@map("deposit_orders")
+}
+
+model SystemConfig {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}
+
+model WithdrawOrder {
+  id            String         @id @default(uuid())
+  userId        String         @map("user_id")
+  amount        Decimal        @db.Decimal(20, 2)
+  bankName      String         @map("bank_name")
+  bankCode      String         @map("bank_code")
+  accountNumber String         @map("account_number")
+  accountName   String         @map("account_name")
+  status        WithdrawStatus @default(PENDING)
+  note          String?
+  adminNote     String?        @map("admin_note")
+  processedBy   String?        @map("processed_by")
+  processedAt   DateTime?      @map("processed_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, status])
+  @@map("withdraw_orders")
+}
+
+model BlockedIp {
+  id        String   @id @default(uuid())
+  ipAddress String   @unique @map("ip_address")
+  reason    String?
+  blockedBy String?  @map("blocked_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("blocked_ips")
+}
+
+// ─── Support Chat System ──────────────────────────────────────────────────────
+
+enum SupportSessionStatus {
+  pending
+  active
+  rejected
+  closed
+}
+
+enum SupportSenderType {
+  user
+  admin
+}
+
+model SupportSession {
+  id         String               @id @default(uuid())
+  userId     String               @map("user_id")
+  adminId    String?              @map("admin_id")
+  status     SupportSessionStatus @default(pending)
+  createdAt  DateTime             @default(now()) @map("created_at")
+  approvedAt DateTime?            @map("approved_at")
+  closedAt   DateTime?            @map("closed_at")
+
+  user     User             @relation(fields: [userId], references: [id])
+  messages SupportMessage[]
+
+  @@index([userId, status])
+  @@map("support_sessions")
+}
+
+model SupportMessage {
+  id         String            @id @default(uuid())
+  sessionId  String            @map("session_id")
+  senderId   String            @map("sender_id")
+  senderType SupportSenderType @map("sender_type")
+  message    String?
+  imageUrl   String?           @map("image_url")
+  createdAt  DateTime          @default(now()) @map("created_at")
+
+  session SupportSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, createdAt])
+  @@map("support_messages")
+}
