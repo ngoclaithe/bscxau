@@ -24,7 +24,7 @@ export class AdminAuthController {
             const result = await this.adminAuthService.login(body.email, body.password);
             console.log('[AdminAuth] Login success for:', body.email, 'Token generated');
 
-            res.cookie('access_token', result.access_token, {
+            res.cookie('admin_access_token', result.access_token, {
                 httpOnly: true,
                 secure: true,
                 sameSite: 'none',
@@ -43,7 +43,7 @@ export class AdminAuthController {
 
     @Post('logout')
     async logout(@Res({ passthrough: true }) res: Response) {
-        res.cookie('access_token', '', {
+        res.cookie('admin_access_token', '', {
             httpOnly: true,
             secure: true,
             sameSite: 'none',

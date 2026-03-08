@@ -10,7 +10,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
             jwtFromRequest: (req) => {
                 let token = null;
                 if (req && req.cookies) {
-                    token = req.cookies['access_token'];
+                    token = req.cookies['admin_access_token'] || req.cookies['access_token'];
+                    // console.log('[JwtStrategy] Found token in cookies:', token ? 'YES' : 'NO', 
+                    //             req.cookies['admin_access_token'] ? '(admin_access_token)' : '(access_token)');
                 }
                 if (!token && req && req.headers && req.headers.authorization) {
                     const parts = req.headers.authorization.split(' ');
