@@ -86,6 +86,7 @@ export class AuthController {
             secure: true, // Phải là true khi dùng SameSite: none
             sameSite: 'none', // Cho phép trình duyệt gửi cookie giữa các domain khác nhau
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
+            path: '/',
         });
     }
 }
