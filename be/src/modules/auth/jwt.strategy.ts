@@ -19,7 +19,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         });
     }
 
-    async validate(payload: { sub: string; wallet: string; role: string }) {
-        return { userId: payload.sub, wallet: payload.wallet, role: payload.role };
+    async validate(payload: any) {
+        // console.log('[JwtStrategy] Validating payload:', payload);
+        return {
+            userId: payload.sub,
+            email: payload.email,
+            role: payload.role || (payload.isAdmin ? 'ADMIN' : 'USER'),
+            isAdmin: payload.isAdmin || payload.role === 'ADMIN'
+        };
     }
 }

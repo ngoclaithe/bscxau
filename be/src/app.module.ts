@@ -27,7 +27,7 @@ import { RedisModule } from './modules/redis/redis.module';
     }]),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: !process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? '.env.development' : '.env.production',
+      envFilePath: ['.env', '.env.production', '.env.development'],
     }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),

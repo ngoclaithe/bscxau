@@ -13,7 +13,7 @@ async function bootstrap() {
 
   const frontendUrls = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
-    .map(url => url.trim().replace(/\/$/, ''));
+    .map(url => url.trim().replace(/^["']|["']$/g, '').replace(/\/$/, ''));
 
   app.enableCors({
     origin: frontendUrls,
