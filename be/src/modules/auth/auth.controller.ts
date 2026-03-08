@@ -104,6 +104,15 @@ export class AuthController {
         return { message: 'Logged out' };
     }
 
+    @Post('check-auth')
+    async checkAuth(@Req() req: any) {
+        return {
+            hasAccessToken: !!req.cookies?.access_token,
+            hasAdminToken: !!req.cookies?.admin_access_token,
+            user: req.user
+        };
+    }
+
     private setCookie(res: Response, token: string) {
         // Detect if production: check NODE_ENV or if FRONTEND_URL is HTTPS
         const isProduction = process.env.NODE_ENV === 'production' || 
