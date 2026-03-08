@@ -340,3 +340,37 @@ export const useAdminStore = create<AdminState>()(
     }
   )
 );
+
+// Add method to verify session on app load
+export async function verifyAdminSession() {
+  const store = useAdminStore.getState();
+  
+  if (!store.isAuthenticated) {
+    return false;
+  }
+
+  try {
+    // Try to fetch admin info - if this succeeds, session is valid
+    const adminInfo = await api.get<{
+      id: string;
+      email: string;
+      role: string;
+    }>('/admin-auth/me');
+    
+    // Session is valid, keep authenticated state
+    console.log('[Admin Session] Session verified:', adminInfo.email);
+    useAdminStore.setState({
+      isAuthenticated: true,
+      userRole: adminInfo.role as any
+    });
+    return true;
+  } catch (error) {
+    console.error('[Admin Session] Session verification failed:', error);
+    // Session is invalid, clear auth state
+    useAdminStore.setState({
+      isAuthenticated: false,
+      userRole: null
+    });
+    return false;
+  }
+}

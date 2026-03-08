@@ -2,7 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { Toaster } from 'sonner';
 import { Header } from './components/header';
 import { Footer } from './components/footer';
-import { useAdminStore } from '@/stores/admin-store';
+import { useAdminStore, verifyAdminSession } from '@/stores/admin-store';
 import { AuthDrawer } from './components/auth-drawer';
 
 // Lazy load all pages for code splitting
@@ -145,6 +145,25 @@ function App() {
     window.addEventListener('hashchange', checkAdminRoute);
     return () => window.removeEventListener('hashchange', checkAdminRoute);
   }, [isAuthenticated]);
+
+  // Verify admin session on mount - ensures cookie-based session is still valid
+  React.useEffect(() => {
+    const initializeAdminSession = async () => {
+      const hash = window.location.hash.slice(1);
+      if (hash === ADMIN_SECRET_ROUTE && isAuthenticated) {
+        console.log('[App] Verifying admin session after page load...');
+        const isValid = await verifyAdminSession();
+        if (!isValid) {
+          console.log('[App] Admin session invalid, redirecting to login');
+          setCurrentPage('admin-login');
+        }
+      }
+    };
+
+    // Give a small delay to ensure store is hydrated from localStorage
+    const timer = setTimeout(initializeAdminSession, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleNavigate = (page: string) => {
     setCurrentPage(page as AppPage);

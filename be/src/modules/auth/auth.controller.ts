@@ -71,23 +71,49 @@ export class AuthController {
 
     @Post('logout')
     async logout(@Res({ passthrough: true }) res: Response) {
-        res.cookie('access_token', '', {
+        // Detect if production: check NODE_ENV or if FRONTEND_URL is HTTPS
+        const isProduction = process.env.NODE_ENV === 'production' || 
+                             process.env.FRONTEND_URL?.includes('https');
+        
+        const cookieOptions: any = {
             httpOnly: true,
-            secure: true,
-            sameSite: 'none',
+            path: '/',
             expires: new Date(0),
-        });
+        };
+        if (isProduction) {
+            cookieOptions.secure = true;
+            cookieOptions.sameSite = 'none';
+        } else {
+            cookieOptions.secure = false;
+            cookieOptions.sameSite = 'lax';
+        }
+        res.cookie('access_token', '', cookieOptions);
         return { message: 'Logged out' };
     }
 
     private setCookie(res: Response, token: string) {
-        res.cookie('access_token', token, {
+        // Detect if production: check NODE_ENV or if FRONTEND_URL is HTTPS
+        const isProduction = process.env.NODE_ENV === 'production' || 
+                             process.env.FRONTEND_URL?.includes('https');
+        
+        const cookieOptions: any = {
             httpOnly: true,
-            secure: true, // Phải là true khi dùng SameSite: none
-            sameSite: 'none', // Cho phép trình duyệt gửi cookie giữa các domain khác nhau
             maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
             path: '/',
-        });
+        };
+
+        if (isProduction) {
+            cookieOptions.secure = true;
+            cookieOptions.sameSite = 'none';
+            console.log('[Auth] Production mode detected - using SameSite: none with Secure');
+        } else {
+            cookieOptions.secure = false;
+            cookieOptions.sameSite = 'lax';
+            console.log('[Auth] Development mode - using SameSite: lax');
+        }
+        
+        console.log('[Auth] Setting access_token cookie with options:', cookieOptions);
+        res.cookie('access_token', token, cookieOptions);
     }
 }
 
