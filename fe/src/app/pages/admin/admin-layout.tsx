@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { LayoutDashboard, Settings, TrendingUp, Users, Shield, LogOut, Activity, FileText, Sliders, DollarSign, CreditCard, MessageSquare } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { useAdminStore } from '@/stores/admin-store';
+import { useAdminStore, verifyAdminSession } from '@/stores/admin-store';
 import { useSupportStore } from '@/stores/support-store';
 
 
@@ -13,10 +13,16 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ currentPage, onNavigate, children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-  const { logout, userRole } = useAdminStore();
+  const { logout, userRole, isAuthenticated } = useAdminStore();
   const { pendingSessions, fetchPendingSessions } = useSupportStore();
   const pendingCount = pendingSessions.length;
 
+  // Verify admin session when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      verifyAdminSession();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchPendingSessions();
