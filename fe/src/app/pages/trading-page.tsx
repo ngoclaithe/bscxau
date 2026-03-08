@@ -34,7 +34,7 @@ export const TradingPage: React.FC = () => {
 
   const [candleData, setCandleData] = React.useState<CandleData[]>([]);
   const lastCandleTimeRef = React.useRef<number>(0);
-  const [prevPrice, setPrevPrice] = React.useState<number>(0);
+
 
   // Use BTC/USD as default - matches BE oracle symbol
   const currentSymbol = selectedPair?.symbol || 'BTC/USD';
@@ -63,7 +63,7 @@ export const TradingPage: React.FC = () => {
     const handlePriceUpdate = (data: { pair: string; price: number; timestamp?: number }) => {
       const incomingPrice = Number(data.price);
 
-      setPrevPrice((prev) => prev || incomingPrice);
+
       updatePrice(data.pair, incomingPrice); // Store price globally for the sidebar
 
       if (data.pair === currentSymbol) {
