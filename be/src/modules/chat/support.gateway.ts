@@ -178,10 +178,16 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private _extractToken(client: AuthSocket): string | undefined {
-        // 1. Cookie
+        // 1. Cookie - try admin token first, then user token
         const cookie = client.handshake.headers?.cookie || '';
-        const match = cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
-        if (match) return decodeURIComponent(match[1]);
+        
+        // Try admin_access_token first
+        const adminMatch = cookie.match(/(?:^|;\s*)admin_access_token=([^;]+)/);
+        if (adminMatch) return decodeURIComponent(adminMatch[1]);
+        
+        // Fall back to access_token
+        const userMatch = cookie.match(/(?:^|;\s*)access_token=([^;]+)/);
+        if (userMatch) return decodeURIComponent(userMatch[1]);
 
         // 2. Handshake auth
         if (client.handshake.auth?.token) return client.handshake.auth.token;
