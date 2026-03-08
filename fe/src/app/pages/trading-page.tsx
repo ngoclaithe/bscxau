@@ -39,8 +39,7 @@ export const TradingPage: React.FC = () => {
   // Use BTC/USD as default - matches BE oracle symbol
   const currentSymbol = selectedPair?.symbol || 'BTC/USD';
 
-  // Track price direction
-  const priceDirection = currentPrice > prevPrice ? 'up' : currentPrice < prevPrice ? 'down' : 'neutral';
+
 
   // Initialize candle data
   React.useEffect(() => {
@@ -184,13 +183,7 @@ export const TradingPage: React.FC = () => {
 
         {/* Center: Chart Area */}
         <div className="flex-1 min-w-0 flex flex-col bg-background overflow-hidden">
-          {/* Chart Top Bar */}
-          <div className="flex items-center gap-3 px-4 py-2 border-b border-border/60 bg-card/20 shrink-0">
-            <span className="text-sm font-bold text-foreground">{formatSymbol(currentSymbol)}</span>
-            <span className={`text-sm font-mono font-bold tabular-nums ${priceDirection === 'up' ? 'text-emerald-400' : priceDirection === 'down' ? 'text-red-400' : 'text-muted-foreground'}`}>
-              {formatPrice(currentPrice)}
-            </span>
-          </div>
+
 
           {/* Chart */}
           <div className="flex-1 min-h-0 p-2">
