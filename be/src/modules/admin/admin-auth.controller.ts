@@ -26,8 +26,8 @@ export class AdminAuthController {
 
             res.cookie('access_token', result.access_token, {
                 httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
+                secure: true,
+                sameSite: 'none',
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
             });
 
@@ -42,8 +42,8 @@ export class AdminAuthController {
     async logout(@Res({ passthrough: true }) res: Response) {
         res.cookie('access_token', '', {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            secure: true,
+            sameSite: 'none',
             expires: new Date(0),
         });
         return { message: 'Logged out' };
