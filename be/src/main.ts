@@ -6,8 +6,13 @@ import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 import cookieParser from 'cookie-parser';
 
+import { NestExpressApplication } from '@nestjs/platform-express';
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+  // Necessary for secure cookies behind Nginx proxy
+  app.set('trust proxy', 1);
 
   app.setGlobalPrefix('api/v1');
 

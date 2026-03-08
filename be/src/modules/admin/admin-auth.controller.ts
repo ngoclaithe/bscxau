@@ -22,7 +22,7 @@ export class AdminAuthController {
         console.log('[AdminAuth] Login attempt:', { email: body.email, passwordLength: body.password?.length });
         try {
             const result = await this.adminAuthService.login(body.email, body.password);
-            console.log('[AdminAuth] Login success for:', body.email);
+            console.log('[AdminAuth] Login success for:', body.email, 'Token generated');
 
             res.cookie('access_token', result.access_token, {
                 httpOnly: true,
@@ -31,7 +31,10 @@ export class AdminAuthController {
                 maxAge: 7 * 24 * 60 * 60 * 1000, // 7d
             });
 
-            return { admin: result.admin };
+            return {
+                admin: result.admin,
+                accessToken: result.access_token // Include in body as fallback
+            };
         } catch (error) {
             console.error('[AdminAuth] Login error:', error);
             throw error;
