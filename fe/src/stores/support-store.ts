@@ -62,6 +62,7 @@ interface SupportState {
     deleteSession: (sessionId: string) => Promise<void>;
     incrementUnread: (sessionId: string) => void;
     clearUnread: (sessionId: string) => void;
+    addPendingSession: (session: SupportSession) => void;
     updateSessionLastMessage: (sessionId: string, msg: SupportMessage) => void;
     uploadImage: (file: File) => Promise<string | null>;
 }
@@ -216,6 +217,16 @@ export const useSupportStore = create<SupportState>((set, get) => ({
         set((state) => ({
             unreadCounts: { ...state.unreadCounts, [sessionId]: 0 }
         }));
+    },
+
+    addPendingSession: (session) => {
+        set((state) => {
+            if (state.pendingSessions.some((s) => s.id === session.id)) return state;
+            return {
+                pendingSessions: [session, ...state.pendingSessions],
+                allSessions: [session, ...state.allSessions],
+            };
+        });
     },
 
     updateSessionLastMessage: (sessionId, msg) => {

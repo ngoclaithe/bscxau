@@ -22,6 +22,7 @@ import { extname } from 'path';
 import { Observable, Subject } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { SupportService } from './support.service';
+import { SupportGateway } from './support.gateway';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 
@@ -41,17 +42,23 @@ export function notifyUser(userId: string, eventName: string, payload: object) {
 @Controller('support')
 @UseGuards(AuthGuard('jwt'))
 export class SupportUserController {
-    constructor(private supportService: SupportService) { }
+    constructor(
+        private supportService: SupportService,
+        private supportGateway: SupportGateway,
+    ) { }
 
     /**
      * POST /support/request
      * User requests support. Returns session_id.
+     * Notifies all connected admins of the new pending session via WebSocket.
      */
     @Post('request')
     @HttpCode(201)
     async requestSupport(@Request() req: any) {
         const userId = req.user.userId;
         const session = await this.supportService.createSession(userId);
+        // Notify all admins of the new pending session in real-time
+        this.supportGateway.notifyAdminsOfNewSession(session);
         return { session_id: session.id, status: session.status };
     }
 

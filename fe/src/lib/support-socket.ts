@@ -11,6 +11,19 @@ export interface SupportMessage {
     createdAt: string;
 }
 
+export interface SupportSession {
+    id: string;
+    userId: string;
+    status: 'pending' | 'active' | 'rejected' | 'closed';
+    createdAt: string;
+    user?: {
+        id: string;
+        nickname?: string;
+        email?: string;
+        avatarUrl?: string;
+    };
+}
+
 const SOCKET_URL =
     import.meta.env.VITE_SOCKET_URL ||
     (API_URL.startsWith('http') ? API_URL.replace(/\/api\/v1\/?$/, '') : window.location.origin);
@@ -21,6 +34,7 @@ type HistoryListener = (messages: SupportMessage[]) => void;
 type ConnectionListener = (connected: boolean) => void;
 type ErrorListener = (err: { message: string }) => void;
 type AdminAlertListener = (msg: SupportMessage) => void;
+type AdminPendingSessionListener = (data: { session: SupportSession }) => void;
 
 class SupportSocketService {
     private socket: Socket | null = null;
@@ -30,6 +44,7 @@ class SupportSocketService {
     private connectionListeners: ConnectionListener[] = [];
     private errorListeners: ErrorListener[] = [];
     private adminAlertListeners: AdminAlertListener[] = [];
+    private adminPendingSessionListeners: AdminPendingSessionListener[] = [];
 
     connect(): Promise<void> {
         return new Promise((resolve) => {
@@ -79,6 +94,10 @@ class SupportSocketService {
             this.socket.on('admin_message_alert', (msg: SupportMessage) => {
                 this.adminAlertListeners.forEach((l) => l(msg));
             });
+
+            this.socket.on('admin:pending_session_new', (data: { session: SupportSession }) => {
+                this.adminPendingSessionListeners.forEach((l) => l(data));
+            });
         });
     }
 
@@ -124,6 +143,11 @@ class SupportSocketService {
         return () => { this.adminAlertListeners = this.adminAlertListeners.filter((l) => l !== listener); };
     }
 
+    onAdminPendingSession(listener: AdminPendingSessionListener) {
+        this.adminPendingSessionListeners.push(listener);
+        return () => { this.adminPendingSessionListeners = this.adminPendingSessionListeners.filter((l) => l !== listener); };
+    }
+
     onConnectionChange(listener: ConnectionListener) {
         this.connectionListeners.push(listener);
         return () => { this.connectionListeners = this.connectionListeners.filter((l) => l !== listener); };
@@ -145,6 +169,7 @@ class SupportSocketService {
         this.connectionListeners = [];
         this.errorListeners = [];
         this.adminAlertListeners = [];
+        this.adminPendingSessionListeners = [];
     }
 }
 

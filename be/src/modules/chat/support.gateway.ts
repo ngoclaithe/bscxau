@@ -170,6 +170,25 @@ export class SupportGateway implements OnGatewayConnection, OnGatewayDisconnect 
         }
     }
 
+    /**
+     * Notify all admin clients of a new pending support session.
+     * Called by SupportService when a new session is created.
+     */
+    notifyAdminsOfNewSession(session: any) {
+        if (this.server) {
+            console.log(`[Support WS] Broadcasting new pending session: ${session.id}`);
+            this.server.to('admin_updates_room').emit('admin:pending_session_new', {
+                session: {
+                    id: session.id,
+                    userId: session.userId,
+                    status: session.status,
+                    createdAt: session.createdAt,
+                    user: session.user,
+                }
+            });
+        }
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────────
 
     private _extractToken(client: AuthSocket): string | undefined {

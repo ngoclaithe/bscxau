@@ -87,10 +87,16 @@ export const AdminChatPage: React.FC = () => {
             useSupportStore.getState().updateSessionLastMessage(msg.sessionId, msg);
         });
 
+        const unsubPending = supportSocket.onAdminPendingSession((data) => {
+            useSupportStore.getState().addPendingSession(data.session);
+            toast.info(`Có yêu cầu hỗ trợ mới từ ${data.session.user?.nickname || data.session.user?.email || 'Khách'}`);
+        });
+
         return () => {
             clearInterval(interval);
             isMounted = false;
             unsubAlert();
+            unsubPending();
             supportSocket.disconnect();
         };
     }, []);
