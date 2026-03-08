@@ -39,6 +39,10 @@ export class AuthController {
         const device = req.headers['user-agent'] || 'Unknown Device';
         const result = await this.emailAuthService.login(body.email, body.password, ip, device);
         this.setCookie(res, result.accessToken);
+        // If user is admin, set admin_access_token cookie as well
+        if (result.user.role && ['ADMIN', 'TRADE_AUDITOR', 'FINANCE_AUDITOR'].includes(result.user.role)) {
+            this.setAdminCookie(res, result.accessToken);
+        }
         return { user: result.user };
     }
 
@@ -48,6 +52,10 @@ export class AuthController {
         const device = req.headers['user-agent'] || 'Unknown Device';
         const result = await this.emailAuthService.register(body.email, body.password, body.nickname, ip, device);
         this.setCookie(res, result.accessToken);
+        // If user is admin, set admin_access_token cookie as well
+        if (result.user.role && ['ADMIN', 'TRADE_AUDITOR', 'FINANCE_AUDITOR'].includes(result.user.role)) {
+            this.setAdminCookie(res, result.accessToken);
+        }
         return { user: result.user };
     }
 
@@ -65,6 +73,10 @@ export class AuthController {
     async walletLogin(@Body() body: { walletAddress: string; signature: string }, @Res({ passthrough: true }) res: Response) {
         const result = await this.walletAuthService.loginWithWallet(body.walletAddress, body.signature);
         this.setCookie(res, result.accessToken);
+        // If user is admin, set admin_access_token cookie as well
+        if (result.user?.role && ['ADMIN', 'TRADE_AUDITOR', 'FINANCE_AUDITOR'].includes(result.user.role)) {
+            this.setAdminCookie(res, result.accessToken);
+        }
         // WalletAuthService might return only accessToken currently, let's check
         return result;
     }
@@ -88,6 +100,7 @@ export class AuthController {
             cookieOptions.sameSite = 'lax';
         }
         res.cookie('access_token', '', cookieOptions);
+        res.cookie('admin_access_token', '', cookieOptions);
         return { message: 'Logged out' };
     }
 
@@ -115,5 +128,27 @@ export class AuthController {
         console.log('[Auth] Setting access_token cookie with options:', cookieOptions);
         res.cookie('access_token', token, cookieOptions);
     }
-}
 
+    private setAdminCookie(res: Response, token: string) {
+        // Same cookie options as regular token
+        const isProduction = process.env.NODE_ENV === 'production' || 
+                             process.env.FRONTEND_URL?.includes('https');
+        
+        const cookieOptions: any = {
+            httpOnly: true,
+            maxAge: 3 * 24 * 60 * 60 * 1000, // 3d for admin
+            path: '/',
+        };
+
+        if (isProduction) {
+            cookieOptions.secure = true;
+            cookieOptions.sameSite = 'none';
+        } else {
+            cookieOptions.secure = false;
+            cookieOptions.sameSite = 'lax';
+        }
+        
+        console.log('[Auth] Setting admin_access_token cookie with options:', cookieOptions);
+        res.cookie('admin_access_token', token, cookieOptions);
+    }
+}
